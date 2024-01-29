@@ -1,39 +1,30 @@
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.schema import BaseOutputParser
-from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAI
-from dotenv import load_dotenv
 import streamlit as st
 import os
 
 st.set_page_config(page_title="QA Bot")
 MODEL = "gpt-3.5-turbo-instruct"
-load_dotenv()
 
 
-def get_api_key(key: str) -> str:
-    return os.getenv(key)
+def get_model(model_name: str) -> OpenAI:
+    return OpenAI(
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        model=model_name,
+        temperature=1
+    )
 
 
-def get_openai_response(question: str):
+def get_openai_response(open_ai_llm: OpenAI, question: str):
     if question:
-        llm = OpenAI(
-            openai_api_key=get_api_key("OPENAI_API_KEY"),
-            model=MODEL,
-            temperature=0.5
-        )
-        response = llm(question)
-        return response
+        return open_ai_llm.invoke(question)
 
 
-user_input = st.text_input(label="Question", key="user_input")
+openai_llm = get_model(MODEL)
 
-llm_response = get_openai_response(user_input)
+with st.form("bot_form"):
+    user_input = st.text_input(label="I Wanna ask...")
+    ask = st.form_submit_button("Ask!")
 
-st.header("LangChain Bot")
-
-submit = st.button("Ask")
-
-if submit:
-    st.subheader("Response:")
-    st.write(llm_response)
+    if ask:
+        response = get_openai_response(openai_llm, user_input)
+        st.write(response)
